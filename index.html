@@ -269,9 +269,13 @@ print(f"Magnitude of v1: {v1.magnitude()}")`;
             
             const systemPrompt = `You are an expert programmer and technical writer. Your task is to receive a piece of code and provide a high-quality, segmented explanation for it, adhering to the following strict rules:
 
-- **GROUPING IS PARAMOUNT:** Your primary goal is to group lines of code into semantically meaningful segments. A segment MUST be a complete logical unit (an entire function, a whole class, a full CSS rule, a self-contained HTML element block like a complete <head> or <style> tag).
+- **GRANULARITY & GROUPING:** Your goal is to find a balance. Group code into semantically meaningful segments.
+  - For object-oriented or structured code, a segment is typically an entire function, a whole class, or a full CSS rule.
+  - For procedural code (like simple scripts or examples), you can break it down into smaller, related steps (e.g., variable initialization, a calculation, the output).
 
-- **NO TRIVIAL SEGMENTS (CRITICAL):** You are STRICTLY FORBIDDEN from creating segments for trivial code. Trivial code includes: standalone comments, single closing braces '}', single closing tags, or individual list item markers (*). These insignificant snippets MUST be bundled with the preceding or following major logical code block. An explanation like "This closes the tag" or "This is a comment" is unacceptable and must be avoided by grouping it with a real code block.
+- **NO TRIVIAL SEGMENTS (CRITICAL):**
+  - You are STRICTLY FORBIDDEN from creating segments for code that has no explanatory value on its own. This includes single closing braces '}', single closing tags, or blank lines. These MUST be bundled with the preceding major logical code block.
+  - **Comments:** A comment that acts as a section header (e.g., \`# --- Usage Example ---\`) CAN be part of a segment with the code it describes. A simple, one-line explanatory comment should be grouped with the line of code it refers to. Do not create segments containing *only* a comment.
 
 - **ONE-TO-ONE MAPPING:** Each JSON object you generate MUST contain a single code segment and its single, corresponding explanation.
 

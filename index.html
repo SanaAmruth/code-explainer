@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Explainer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- KaTeX for beautiful math rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" xintegrity="sha384-n8MVd4RsNIU0KOVEMeaYqaGwsbXcNfURiIoDRFUbIOxgAECSbCwnBidLQXe7Aa4I" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" xintegrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGohHnVCMCiHG" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" xintegrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0A0A0A;
+            color: #E0E0E0;
+        }
+        .code-editor, .code-segment pre {
+            font-family: 'JetBrains Mono', monospace;
+            background-color: #1A1A1A;
+            color: #D4D4D4;
+        }
+        .explanation-panel {
+            background-color: #121212;
+            border: 1px solid #333;
+            border-radius: 0.75rem;
+        }
+        .explanation-segment p, .explanation-segment ul {
+            line-height: 1.7;
+            color: #A0A0A0;
+            margin-bottom: 1rem;
+        }
+         .explanation-segment h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #E0E0E0;
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #333;
+        }
+        .explanation-segment code {
+            background-color: #2a2a2a;
+            color: #F0A070;
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.25rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .btn {
+            transition: all 0.2s ease-in-out;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        .loader {
+            border-top-color: #3498db;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1A1A1A;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4A4A4A;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #5A5A5A;
+        }
+        
+        .segment-row {
+            border-top: 1px solid #333;
+        }
+        #explanation-content > .segment-row:first-child {
+            border-top: none;
+        }
+        .explanation-segment, .code-segment {
+            padding: 1.5rem;
+            min-height: 50px;
+        }
+        .code-segment {
+             border-left: 1px solid #333;
+             background-color: #0D0D0D;
+        }
+        .code-segment pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            padding: 0;
+            background-color: transparent;
+        }
+         #notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
+            border-radius: 8px;
+            color: white;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        #notification.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        #notification.error { background-color: #e74c3c; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col p-4 md:p-8">
+    <div id="notification" class="error"></div>
+
+    <header class="text-center mb-4">
+        <h1 class="text-3xl md:text-4xl font-bold text-white">AI-Powered Code Explainer</h1>
+        <p class="text-gray-400 mt-2">Get a line-by-line interactive explanation of your code.</p>
+    </header>
+
+    <div class="flex justify-center mb-6">
+        <div class="w-full max-w-md">
+            <label for="api-key-input" class="block text-sm font-medium text-gray-300 mb-2">Gemini API Key</label>
+            <input type="password" id="api-key-input" class="w-full px-3 py-2 bg-[#1A1A1A] border border-[#333] rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter your API key here...">
+        </div>
+    </div>
+
+    <main class="flex-grow w-full max-w-7xl mx-auto flex flex-col">
+         <div class="flex flex-col md:flex-row items-center justify-between mb-4 gap-4">
+            <div class="flex-grow w-full">
+                <h2 class="text-xl font-semibold text-white">Your Code</h2>
+                 <p class="text-sm text-gray-400">Upload or paste your code below to begin.</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <label for="file-upload" class="btn cursor-pointer bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold shadow-md hover:bg-blue-700">
+                    Upload File
+                </label>
+                <input id="file-upload" type="file" class="hidden">
+                <button id="generate-btn" class="btn bg-green-600 text-white px-4 py-2 rounded-lg font-semibold shadow-md hover:bg-green-700">
+                    Generate Explanation
+                </button>
+            </div>
+        </div>
+
+        <textarea id="code-input" class="code-editor w-full p-4 rounded-lg border text-sm h-64 resize-y mb-8"></textarea>
+        
+        <!-- Explanation Output -->
+        <div id="explanation-panel" class="explanation-panel flex-grow w-full rounded-lg relative overflow-hidden">
+             <div id="placeholder" class="text-gray-500 text-center py-10">
+                Your code explanation will appear here in a side-by-side view.
+            </div>
+            <div id="loader" class="hidden absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12"></div>
+                 <p class="ml-4 text-white">Analyzing code and generating segments...</p>
+            </div>
+            <div id="explanation-content" class="space-y-0"></div>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof renderMathInElement === 'function') {
+                renderMathInElement(document.body);
+            }
+        });
+
+        const fileUpload = document.getElementById('file-upload');
+        const codeInput = document.getElementById('code-input');
+        const generateBtn = document.getElementById('generate-btn');
+        const placeholder = document.getElementById('placeholder');
+        const loader = document.getElementById('loader');
+        const explanationContent = document.getElementById('explanation-content');
+        const apiKeyInput = document.getElementById('api-key-input');
+        const notification = document.getElementById('notification');
+
+        codeInput.value = `# Welcome! Paste your code here or upload a file.
+# Example Python code with a formula: a^2 + b^2 = c^2
+
+import math
+
+class Vector:
+    """Represents a 2D vector."""
+    def __init__(self, x=0, y=0):
+        self.x = x
+        self.y = y
+
+    def magnitude(self):
+        """
+        Returns the magnitude (length) of the vector.
+        Calculated using the Pythagorean theorem: $M = \\sqrt{x^2 + y^2}$
+        """
+        return math.sqrt(self.x**2 + self.y**2)
+
+# --- Usage Example ---
+v1 = Vector(3, 4)
+print(f"Magnitude of v1: {v1.magnitude()}")`;
+
+        fileUpload.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    codeInput.value = e.target.result;
+                    explanationContent.innerHTML = '';
+                    placeholder.style.display = 'block';
+                };
+                reader.readAsText(file);
+            }
+        });
+        
+        function showNotification(message, type = 'error') {
+            notification.textContent = message;
+            notification.className = '';
+            notification.classList.add(type, 'show');
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        generateBtn.addEventListener('click', generateExplanation);
+
+        async function generateExplanation() {
+            const userCode = codeInput.value;
+            const userApiKey = apiKeyInput.value.trim();
+
+            if (!userApiKey) {
+                showNotification('Please enter your Gemini API key.');
+                apiKeyInput.focus();
+                return;
+            }
+
+            if (!userCode.trim()) {
+                showNotification('Please upload or paste some code first.');
+                return;
+            }
+
+            loader.classList.remove('hidden');
+            placeholder.style.display = 'none';
+            explanationContent.innerHTML = '';
+            generateBtn.disabled = true;
+            generateBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            const modelName = 'gemini-2.5-flash-preview-05-20';
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${userApiKey}`;
+            
+            const systemPrompt = `You are an expert programmer and technical writer. Your task is to receive a piece of code and provide a high-quality, segmented explanation for it, adhering to the following strict rules:
+
+- **GROUPING IS PARAMOUNT:** Your primary goal is to group lines of code into semantically meaningful segments. A segment MUST be a complete logical unit (an entire function, a whole class, a full CSS rule, a self-contained HTML element block like a complete <head> or <style> tag).
+
+- **NO TRIVIAL SEGMENTS (CRITICAL):** You are STRICTLY FORBIDDEN from creating segments for trivial code. Trivial code includes: standalone comments, single closing braces '}', single closing tags, or individual list item markers (*). These insignificant snippets MUST be bundled with the preceding or following major logical code block. An explanation like "This closes the tag" or "This is a comment" is unacceptable and must be avoided by grouping it with a real code block.
+
+- **ONE-TO-ONE MAPPING:** Each JSON object you generate MUST contain a single code segment and its single, corresponding explanation.
+
+- **PERFECT RECONSTRUCTION:** The 'code' from all segments, when concatenated, MUST perfectly match the original input. Every line must be accounted for.
+
+- **NO EMPTY SEGMENTS:** Both 'code' and 'explanation' properties MUST NOT be empty.
+
+- **OUTPUT FORMAT:** You MUST respond with a JSON object with a single key 'segments', which is an array of objects. Each object must have two keys: 'code' (string) and 'explanation' (Markdown string).
+
+- **CONCISE EXPLANATIONS:** Keep explanations focused on the specific code segment. Use titles (h3) very sparingly.
+
+- **MATH FORMATTING:** Use LaTeX for all math ($inline$$ and $$block$$).`;
+            
+            const payload = {
+                contents: [{ parts: [{ text: userCode }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            "segments": {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        "code": { "type": "STRING" },
+                                        "explanation": { "type": "STRING" }
+                                    },
+                                    required: ["code", "explanation"]
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorBody = await response.json();
+                    console.error("API Error Response:", errorBody);
+                    throw new Error(`API call failed: ${response.status} - ${errorBody.error?.message || 'Unknown error'}`);
+                }
+                
+                const result = await response.json();
+                const candidate = result.candidates?.[0];
+                const jsonText = candidate?.content?.parts?.[0]?.text;
+
+                if (jsonText) {
+                    const parsedJson = JSON.parse(jsonText);
+                    displayExplanation(parsedJson.segments);
+                } else {
+                    const reason = candidate?.finishReason;
+                    if (reason === 'SAFETY') {
+                         showNotification("Explanation could not be generated due to safety settings.");
+                    } else {
+                         showNotification("Failed to generate explanation. The model's response was empty.");
+                    }
+                    placeholder.style.display = 'block';
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification(`An error occurred: ${error.message}`);
+                placeholder.style.display = 'block';
+            } finally {
+                loader.classList.add('hidden');
+                generateBtn.disabled = false;
+                generateBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+        
+        function displayExplanation(segments) {
+            explanationContent.innerHTML = '';
+            if (!segments || segments.length === 0) {
+                placeholder.style.display = 'block';
+                return;
+            }
+
+            segments.forEach(segment => {
+                // VALIDATION CHECK: Ensure both code and explanation exist and are not just whitespace.
+                if (!segment.code || !segment.explanation || !segment.code.trim() || !segment.explanation.trim()) {
+                    console.warn('Skipping invalid segment:', segment); // Log for debugging
+                    return; // Skip this row entirely if it's invalid
+                }
+
+                const row = document.createElement('div');
+                row.className = 'segment-row grid grid-cols-1 md:grid-cols-2 gap-0';
+
+                const safeCode = segment.code.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                const explanationHtml = formatExplanationMarkdown(segment.explanation);
+
+                row.innerHTML = `
+                    <div class="explanation-segment">
+                        ${explanationHtml}
+                    </div>
+                    <div class="code-segment">
+                        <pre><code>${safeCode}</code></pre>
+                    </div>
+                `;
+                explanationContent.appendChild(row);
+            });
+
+            // Re-render LaTeX math formulas using KaTeX
+            if (typeof renderMathInElement === 'function') {
+                renderMathInElement(explanationContent, {
+                    delimiters: [
+                      {left: '$$', right: '$$', display: true},
+                      {left: '$', right: '$', display: false}
+                    ]
+                });
+            }
+        }
+        
+        function formatExplanationMarkdown(markdown) {
+            // Convert titles (### Title) to <h3>
+            let html = markdown.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+
+             const formatInline = (text) => text
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em></em>')
+                .replace(/`([^`]+)`/g, '<code>$1</code>');
+            
+            // Process paragraphs and lists
+            return html.trim().split(/\n{2,}/).map(block => {
+                if (block.startsWith('<h3>')) return block;
+
+                block = block.trim();
+                 if (block.split('\n').every(line => line.trim().startsWith('- ') || line.trim().startsWith('* '))) {
+                    const listItems = block.split('\n').map(item => `<li>${formatInline(item.trim().substring(2))}</li>`).join('');
+                    return `<ul class="list-disc list-inside">${listItems}</ul>`;
+                }
+                return `<p>${formatInline(block).replace(/\n/g, '<br>')}</p>`;
+            }).join('');
+        }
+    </script>
+</body>
+</html>
+
